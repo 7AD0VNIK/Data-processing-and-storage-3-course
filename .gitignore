@@ -1,0 +1,15 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+**/build/
+
+# Generated/private crypto files
+*.pem
+*.key
+*.crt
+
+# OS
+.DS_Store

@@ -28,9 +28,7 @@ public class Client {
         for (int i = 3; i < args.length; i++) {
             if (args[i].equals("--delay")) {
                 if (i + 1 >= args.length) {
-                    throw new IllegalArgumentException(
-                            "--delay requires number of seconds"
-                    );
+                    throw new IllegalArgumentException("--delay requires number of seconds");
                 }
 
                 delay = Integer.parseInt(args[++i]);
@@ -42,12 +40,7 @@ public class Client {
 
         try (Socket socket = new Socket(host, port)) {
             OutputStream out = socket.getOutputStream();
-
-            /*
-             * ASCII name + нулевой байт.
-             */
             out.write(name.getBytes(StandardCharsets.US_ASCII));
-
             out.write(0);
             out.flush();
 
@@ -67,10 +60,6 @@ public class Client {
             byte[] certificate = readBlock(in);
 
             writePem(Path.of(name + ".key"), "PRIVATE KEY", privateKey);
-
-            /*
-             * Сертификат уже содержит public key.
-             */
             writePem(Path.of(name + ".crt"), "CERTIFICATE", certificate);
 
             System.out.println("Saved: " + name + ".key, " + name + ".crt");
@@ -109,7 +98,6 @@ public class Client {
                         + "\n-----END "
                         + type
                         + "-----\n";
-
         Files.writeString(path, pem, StandardCharsets.US_ASCII);
     }
 }

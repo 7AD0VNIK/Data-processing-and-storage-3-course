@@ -36,11 +36,8 @@ public class Server {
     public Server(int port, int workerCount, String issuer, Path issuerKeyFile) throws Exception {
         issuerKey = CryptoUtils.loadPrivateKey(issuerKeyFile);
         issuerName = new X500Name(issuer);
-
         workers = Executors.newFixedThreadPool(workerCount);
-
         selector = Selector.open();
-
         server = ServerSocketChannel.open();
         server.configureBlocking(false);
         server.bind(new InetSocketAddress("0.0.0.0", port));
@@ -92,7 +89,6 @@ public class Server {
 
     private void read(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-
         ClientState state = (ClientState) key.attachment();
 
         int n = client.read(state.input);
@@ -112,8 +108,7 @@ public class Server {
             byte b = state.input.get();
 
             if (b == 0) {
-                String name =
-                        state.name.toString(StandardCharsets.US_ASCII);
+                String name = state.name.toString(StandardCharsets.US_ASCII);
 
                 if (name.isEmpty()) {
                     close(key);
@@ -144,36 +139,24 @@ public class Server {
     }
 
     private void request(String name, SelectionKey key) {
-        CompletableFuture<CryptoUtils.Result> future =
-                getOrStartGeneration(name);
+        CompletableFuture<CryptoUtils.Result> future = getOrStartGeneration(name);
 
         future.whenComplete((result, error) -> {
-            readyQueue.add(
-                    new Ready(key, result, error)
-            );
-
+            readyQueue.add(new Ready(key, result, error));
             selector.wakeup();
         });
     }
 
-    private CompletableFuture<CryptoUtils.Result>
-    getOrStartGeneration(String name) {
+    private CompletableFuture<CryptoUtils.Result> getOrStartGeneration(String name) {
 
         while (true) {
-            CompletableFuture<CryptoUtils.Result> existing =
-                    cache.get(name);
+            CompletableFuture<CryptoUtils.Result> existing = cache.get(name);
 
             if (existing != null) {
                 return existing;
             }
 
-            CompletableFuture<CryptoUtils.Result> created =
-                    new CompletableFuture<>();
-
-            /*
-             * Только один клиент сможет добавить
-             * Future для данного имени.
-             */
+            CompletableFuture<CryptoUtils.Result> created = new CompletableFuture<>();
             if (cache.putIfAbsent(name, created) == null) {
                 startGeneration(name, created);
                 return created;
@@ -185,12 +168,8 @@ public class Server {
         workers.submit(() -> {
             try {
                 System.out.println("Generating: " + name);
-
-                CryptoUtils.Result result =
-                        CryptoUtils.generate(name, issuerName, issuerKey);
-
+                CryptoUtils.Result result = CryptoUtils.generate(name, issuerName, issuerKey);
                 future.complete(result);
-
                 System.out.println("Ready: " + name);
 
             } catch (Throwable e) {
@@ -221,9 +200,7 @@ public class Server {
         }
     }
 
-    private static ByteBuffer makeResponse(
-            CryptoUtils.Result result
-    ) {
+    private static ByteBuffer makeResponse(CryptoUtils.Result result) {
         byte[] privateKey = result.privateKey();
         byte[] publicKey = result.publicKey();
         byte[] certificate = result.certificate();
@@ -255,7 +232,7 @@ public class Server {
         ClientState state = (ClientState) key.attachment();
 
         /*
-         * Может записаться только часть buffer.
+         * Может записаться только часть buffer
          */
         client.write(state.output);
 

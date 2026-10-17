@@ -80,9 +80,7 @@ public class Server {
 
         while ((client = server.accept()) != null) {
             client.configureBlocking(false);
-
             client.register(selector, SelectionKey.OP_READ, new ClientState());
-
             System.out.println("Connected: " + client.getRemoteAddress());
         }
     }
@@ -115,10 +113,6 @@ public class Server {
                     return;
                 }
 
-                /*
-                 * Пока ждём RSA, сетевых действий
-                 * для этого соединения нет.
-                 */
                 key.interestOps(0);
 
                 request(name, key);
@@ -228,12 +222,7 @@ public class Server {
 
     private void write(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-
         ClientState state = (ClientState) key.attachment();
-
-        /*
-         * Может записаться только часть buffer
-         */
         client.write(state.output);
 
         if (!state.output.hasRemaining()) {

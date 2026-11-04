@@ -5,10 +5,11 @@ import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Crawler {
     static final HttpClient client = HttpClient.newHttpClient();
+    static final ObjectMapper mapper = new ObjectMapper();
     static final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
     static final Set<String> seen = ConcurrentHashMap.newKeySet();
     static final List<String> messages = Collections.synchronizedList(new ArrayList<>());
@@ -24,15 +25,12 @@ public class Crawler {
                 var response = client.send(HttpRequest.newBuilder(URI.create(base + path)).build(),
                         HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != 200) throw new IllegalStateException("HTTP " + response.statusCode());
-                var json = response.body();
+                var json = mapper.readTree(response.body());
+                messages.add(json.get("message").asText());
 
-                var message = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
-                if (message.find()) messages.add(message.group(1));
-
-                var successors = Pattern.compile("\"successors\"\\s*:\\s*\\[(.*?)\\]").matcher(json);
-                if (successors.find()) {
-                    var paths = Pattern.compile("\"([^\"]+)\"").matcher(successors.group(1));
-                    while (paths.find()) crawl(paths.group(1).startsWith("/") ? paths.group(1) : "/" + paths.group(1));
+                for (var successor : json.get("successors")) {
+                    var next = successor.asText();
+                    crawl(next.startsWith("/") ? next : "/" + next);
                 }
             } catch (Exception e) { System.err.println("Ошибка " + path + ": " + e); }
             finally { if (active.decrementAndGet() == 0) done.countDown(); }

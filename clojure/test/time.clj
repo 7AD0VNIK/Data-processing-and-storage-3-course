@@ -1,4 +1,4 @@
-(refer 'c3 :only '[parallel-filter])
+(require '[c3 :refer [parallel-filter]])
 
 (defn prime? [^long n]
   (let [limit (long (Math/sqrt n))]

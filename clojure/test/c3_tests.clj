@@ -1,5 +1,5 @@
 (require '[clojure.test :refer [deftest is run-tests]])
-(refer 'c3 :only '[parallel-filter])
+(require '[c3 :refer [parallel-filter]])
 
 (deftest finite-input
   (is (= [5 3 3 1]
